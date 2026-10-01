@@ -434,7 +434,9 @@ summary {
   .topo__links a:hover { background-size: 100% 2px; }
 }
 
-/* ---------- hero ---------- */
+/* ---------- hero ----------
+   Celular: título e texto, depois o livro 3D, depois os botões (a ordem do
+   HTML). Desktop: texto e botões na coluna da esquerda, livro na direita. */
 
 .hero { padding-block: .5rem 3rem; }
 
@@ -460,7 +462,6 @@ summary {
 }
 
 .hero__acoes {
-  margin-top: 1.75rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -476,21 +477,32 @@ summary {
 @media (min-width: 1024px) {
   .hero { padding-block: 1rem 6rem; }
 
+  /* as linhas 1fr de cima e de baixo centralizam texto + botões como um bloco só */
   .hero__grade {
     grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
-    align-items: center;
-    gap: clamp(1.5rem, 3vw, 3rem);
+    grid-template-rows: 1fr auto auto 1fr;
+    grid-template-areas:
+      ".      palco"
+      "texto  palco"
+      "acoes  palco"
+      ".      palco";
+    column-gap: clamp(1.5rem, 3vw, 3rem);
+    row-gap: 0;
     min-height: min(calc(100dvh - var(--topo-h) - 3rem), 820px);
   }
 
+  .hero__texto { grid-area: texto; }
+  .hero__acoes { grid-area: acoes; margin-top: 2.5rem; }
+  .palco { grid-area: palco; align-self: center; }
+
   .hero__deck { margin-top: 2rem; }
-  .hero__acoes { margin-top: 2.5rem; }
 }
 
 /* O palco repete o selo: o livro ocupa o lugar do cão, entre "Desde" e "2016". */
 .palco {
   position: relative;
-  width: 100%;
+  width: min(100%, 38vh);
+  width: min(100%, 38svh); /* telas baixas: o livro encolhe e os botões seguem na primeira tela */
   max-width: 460px;
   aspect-ratio: 1;
   justify-self: center;
@@ -565,7 +577,7 @@ summary {
 .palco.is-girado .palco__dica { opacity: 0; transition-delay: 0s; }
 
 @media (min-width: 1024px) {
-  .palco { max-width: 620px; }
+  .palco { width: 100%; max-width: 620px; }
 }
 
 /* ---------- frases (bloco anil) ---------- */

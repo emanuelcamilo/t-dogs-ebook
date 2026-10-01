@@ -3,6 +3,35 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <script>
+    // Recarregar a página (F5, puxar para atualizar) sempre volta para o início, no
+    // hero, mesmo que a URL tenha ficado com uma âncora (#sobre, #duvidas...).
+    // Roda aqui no <head> para agir antes de o navegador descer até a âncora ou
+    // restaurar a posição antiga. Link aberto com âncora, sem ser recarregamento,
+    // continua indo direto para a seção.
+    (function () {
+      var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+      var recarregou = nav ? nav.type === 'reload' : !!(performance.navigation && performance.navigation.type === 1);
+      if (!recarregou) {
+        // Link com âncora (ex.: compartilhado no Instagram com #oferta): o salto
+        // nativo usa a rolagem suave do CSS e pode morrer no meio enquanto fontes
+        // e imagens carregam. Depois do load, o salto é refeito, seco.
+        if (location.hash) {
+          addEventListener('load', function () {
+            var alvo = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+            if (alvo) alvo.scrollIntoView({ behavior: 'instant', block: 'start' });
+          });
+        }
+        return;
+      }
+      if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+      if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+      var paraOTopo = function () { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); };
+      paraOTopo();
+      addEventListener('DOMContentLoaded', paraOTopo);
+      addEventListener('load', paraOTopo);
+    })();
+  </script>
   <title>Os 7 erros que atrapalham a educação do seu cachorro · eBook T Dogs</title>
   <meta name="description" content="Guia prático da T Dogs, adestramento e comportamento desde 2016: os 7 erros de rotina que confundem seu cão e o que fazer para corrigir cada um.">
   <meta name="theme-color" content="#F09135">
@@ -83,11 +112,9 @@
             <span>Ele está confuso.</span>
           </h1>
           <p class="hero__deck">Os 7 erros de rotina que confundem seu cão e o que fazer, na prática, para corrigir cada um.</p>
-          <div class="hero__acoes">
-            <a class="botao botao--azul botao--grande" href="https://ig.me/m/tdogsadestramento" data-comprar>Quero o eBook</a>
-            <a class="link-forte" href="#dentro">Ver o que tem dentro</a>
-          </div>
         </div>
+
+        <!-- No celular os botões vêm depois do livro; no desktop o grid os põe embaixo do texto. -->
 
         <div class="palco" id="palco" role="img" aria-label="Capa do eBook Os 7 erros que estão atrapalhando a educação do seu cachorro, da T Dogs.">
           <div class="palco__anel"></div>
@@ -95,6 +122,11 @@
           <span class="palco__lado palco__lado--dir">2016</span>
           <img class="palco__capa" src="assets/img/capa-ebook.webp" width="1224" height="1584" alt="" fetchpriority="high">
           <p class="palco__dica" aria-hidden="true"><svg class="icone"><use href="#i-hand-grabbing"/></svg><span data-dica>Arraste para girar</span></p>
+        </div>
+
+        <div class="hero__acoes">
+          <a class="botao botao--azul botao--grande" href="https://ig.me/m/tdogsadestramento" data-comprar>Quero o eBook</a>
+          <a class="link-forte" href="#dentro">Ver o que tem dentro</a>
         </div>
       </div>
     </section>
