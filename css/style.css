@@ -2,18 +2,31 @@
 
 /* =========================================================
    T Dogs · eBook "Os 7 erros"
+
+   CSS MOBILE-FIRST: o estilo sem media query é o do celular.
+   Telas maiores só acrescentam, sempre com min-width:
+     640px  celular grande / tablet pequeno
+     768px  tablet: layouts em duas colunas
+     1024px desktop: hero lado a lado, links no topo, placar ao lado
+
    Sistema visual: o selo da marca. Campo laranja, anel azul,
-   tinta preta. O anel é a única forma recorrente da página.
+   tinta preta. A página é o campo laranja com blocos
+   arredondados por cima, como o selo segura o cão:
+     laranja  hero, sumário, para quem (o campo)
+     anil     frases, quem somos, dúvidas (o azul do anel em meia-luz)
+     azul     quiz dos erros, oferta
+     tinta    mitos, rodapé
 
    Regra de cantos:
-     interativo (botões)        pílula
-     blocos de cor (azul/preto) --raio-bloco
-     fotos                      --raio-midia
-     papel (folha do sumário)   --raio-papel
+     interativo (botões)                 pílula
+     blocos de cor                       --raio-bloco
+     cartões e balões                    --raio-cartao
+     fotos                               --raio-midia
+     papel (folha do sumário)            --raio-papel
 
    Camadas (z-index):
-     10 palco do livro 3D (dica sobre o canvas)
-     20 topo fixo
+     10 dica sobre o livro 3D
+     20 topo
      30 barra de compra no celular
      40 link "pular para o conteúdo"
    ========================================================= */
@@ -40,11 +53,14 @@
 }
 
 :root {
+  color-scheme: light;
+
   /* --- cor (medida no selo redondo da marca) --- */
   --laranja: #F09135;
-  --laranja-fundo: #E5822A;
+  --laranja-claro: #F6A04A;
   --azul: #1D49A6;
   --azul-fundo: #173D8E;
+  --anil: #ABBFEC;         /* o azul do anel em meia-luz: complementar ao laranja, sem virar branco */
   --tinta: #141414;
   --luz: #FFF9F0;
   --papel: #FFFCF7;
@@ -54,13 +70,13 @@
   --luz-suave: rgba(255, 249, 240, .82);
   --luz-linha: rgba(255, 249, 240, .22);
   --sombra-quente: 0 40px 70px -32px rgba(110, 46, 0, .55);
+  --sombra-azul: 0 16px 30px -22px rgba(29, 73, 166, .6);
 
   /* --- tipo --- */
   --display: "Grenze", "Grenze Fallback", Georgia, serif;
   --gotica: "Grenze Gotisch", "Grenze", "Grenze Fallback", Georgia, serif;
   --texto: "Schibsted Grotesk", "Schibsted Fallback", "Segoe UI", system-ui, sans-serif;
 
-  --f-sm: .9375rem;
   --f-base: clamp(1.0625rem, 1rem + .22vw, 1.1875rem);
   --f-deck: clamp(1.1875rem, 1.06rem + .5vw, 1.4375rem);
   --f-h3: clamp(1.375rem, 1.2rem + .7vw, 1.75rem);
@@ -70,15 +86,20 @@
   /* --- ritmo --- */
   --gut: clamp(1.25rem, 4.5vw, 3rem);
   --wrap: 1240px;
-  --secao-y: clamp(4.5rem, 9vw, 8.5rem);
+  --secao-y: clamp(3.75rem, 9vw, 8.5rem);
   --inset: clamp(.5rem, 1.1vw, 1rem);
-  --topo-h: 72px;
+  --topo-h: 64px;
 
   --raio-bloco: clamp(24px, 3vw, 40px);
+  --raio-cartao: 24px;
   --raio-midia: 20px;
   --raio-papel: 6px;
 
   --mola: cubic-bezier(.2, .9, .25, 1);
+}
+
+@media (min-width: 768px) {
+  :root { --topo-h: 76px; }
 }
 
 /* ---------- base ---------- */
@@ -91,6 +112,12 @@ html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
   scroll-padding-top: calc(var(--topo-h) + 1rem);
+  /* a barra de compra fixa não pode esconder o que recebe foco */
+  scroll-padding-bottom: 6rem;
+}
+
+@media (min-width: 768px) {
+  html { scroll-padding-bottom: 1rem; }
 }
 
 body {
@@ -113,6 +140,13 @@ a { color: inherit; }
 
 button { font: inherit; color: inherit; }
 
+a,
+button,
+summary {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent; /* o retorno do toque vem dos estados :active */
+}
+
 ::selection { background: var(--tinta); color: var(--laranja); }
 
 :focus-visible {
@@ -124,7 +158,8 @@ button { font: inherit; color: inherit; }
 .bloco--azul :focus-visible,
 .bloco--tinta :focus-visible,
 .rodape :focus-visible,
-.barra-compra :focus-visible { outline-color: var(--luz); }
+.barra-compra :focus-visible,
+.topo.is-escuro :focus-visible { outline-color: var(--luz); }
 
 .sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 
@@ -200,7 +235,7 @@ button { font: inherit; color: inherit; }
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  transition: transform .18s var(--mola), background-color .18s ease, box-shadow .18s ease;
+  transition: transform .18s var(--mola), background-color .18s ease, color .18s ease, box-shadow .18s ease;
 }
 
 .botao:hover { transform: translateY(-2px); }
@@ -220,7 +255,7 @@ button { font: inherit; color: inherit; }
   box-shadow: 0 10px 24px -12px rgba(0, 0, 0, .6);
 }
 
-.botao--laranja:hover { background: #F6A04A; }
+.botao--laranja:hover { background: var(--laranja-claro); }
 
 .botao--pequeno {
   min-height: 44px;
@@ -250,74 +285,162 @@ button { font: inherit; color: inherit; }
   gap: .5em;
 }
 
-/* ---------- blocos de cor ---------- */
+/* ---------- blocos de cor ----------
+   Margem em todos os lados: entre dois blocos seguidos as margens se
+   fundem e sobra só uma fresta do campo laranja, igual dos lados. */
 
 .bloco {
-  margin-inline: var(--inset);
+  margin: var(--inset);
   border-radius: var(--raio-bloco);
   padding-block: var(--secao-y);
 }
 
 .bloco--azul { background: var(--azul); color: var(--luz); }
 .bloco--tinta { background: var(--tinta); color: var(--luz); }
+.bloco--anil { background: var(--anil); color: var(--tinta); }
 
-/* ---------- topo ---------- */
+/* ---------- topo ----------
+   Transparente: logo, links e botão flutuam sobre o conteúdo, sem faixa
+   e sem nada em volta deles. Quando a página rola, o que passa por trás do
+   topo fica desfocado (uma camada só de desfoque, sem cor, que some aos
+   poucos na borda de baixo). A cor das peças acompanha a seção de baixo:
+   tinta sobre laranja e anil, luz sobre azul e preto. */
 
 .topo {
   position: sticky;
   top: 0;
   z-index: 20;
-  transition: background-color .25s ease, box-shadow .25s ease;
+  color: var(--tinta);
+  pointer-events: none; /* o espaço entre as peças deixa o clique passar */
+  transition: color .3s ease;
 }
 
-.topo.is-rolado {
-  background: var(--laranja);
-  box-shadow: 0 1px 0 var(--linha);
+.topo.is-escuro { color: var(--luz); }
+
+.topo::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -1.25rem;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent);
+  mask-image: linear-gradient(to bottom, #000 60%, transparent);
+  opacity: 0;
+  transition: opacity .3s ease;
 }
+
+/* no início da página não há nada atrás do topo: o desfoque só liga ao rolar */
+.topo.is-rolado::before { opacity: 1; }
 
 .topo__barra {
   height: var(--topo-h);
   display: flex;
   align-items: center;
-  gap: 2rem;
+  justify-content: space-between;
+  gap: .75rem;
 }
 
+.topo__barra > * { pointer-events: auto; }
+
+/* altura de 44px: área de toque confortável, sem caixa visível */
 .topo__marca {
-  display: block;
-  padding-block: .5rem;
+  display: flex;
+  align-items: center;
+  height: 44px;
   flex: none;
 }
 
-.topo__marca img { width: auto; height: 26px; }
-
-.topo__links {
-  display: flex;
-  gap: 1.75rem;
-  margin-left: auto;
-  font-weight: 500;
+.topo__marca img {
+  width: auto;
+  height: 21px;
+  transition: filter .3s ease;
 }
 
-.topo__links a {
-  text-decoration: none;
-  padding-block: .5rem;
-  background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 0 2px;
-  transition: background-size .25s var(--mola);
+.topo.is-escuro .topo__marca img { filter: invert(1) brightness(1.08); }
+
+.topo__links { display: none; }
+
+.topo__cta {
+  background: var(--azul);
+  color: var(--luz);
+  box-shadow: 0 10px 24px -12px rgba(15, 35, 90, .8);
+  transition: transform .25s var(--mola), opacity .25s ease, visibility 0s, background-color .3s ease, color .3s ease;
 }
 
-.topo__links a:hover { background-size: 100% 2px; }
+.topo__cta:hover { background: var(--azul-fundo); }
+
+.topo.is-escuro .topo__cta {
+  background: var(--laranja);
+  color: var(--tinta);
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, .6);
+}
+
+.topo.is-escuro .topo__cta:hover { background: var(--laranja-claro); }
+
+/* No celular, depois do hero, o botão sai do topo: a barra de compra
+   de baixo assume, e o topo fica só com a logo. */
+.topo.is-compacto .topo__cta {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(.96);
+  transition: transform .25s var(--mola), opacity .2s ease, visibility 0s linear .25s;
+}
+
+@media (min-width: 768px) {
+  .topo__marca img { height: 24px; }
+
+  .topo.is-compacto .topo__cta {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .topo__barra { justify-content: flex-start; }
+
+  /* Só os links ganham um vidro, bem leve: um véu claro quase transparente
+     e um filete. A logo continua solta. O desfoque vem da camada do topo. */
+  .topo__links {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-left: auto;
+    margin-right: 1rem;
+    padding: .2rem 1.35rem;
+    font-weight: 500;
+    background: rgba(255, 249, 240, .1);
+    border: 1px solid rgba(255, 255, 255, .26);
+    border-radius: 999px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16);
+    transition: background-color .3s ease, border-color .3s ease;
+  }
+
+  .topo.is-escuro .topo__links {
+    background: rgba(255, 255, 255, .05);
+    border-color: rgba(255, 255, 255, .16);
+  }
+
+  /* hover: só um sublinhado que cresce, nada em volta do link */
+  .topo__links a {
+    padding-block: .6rem;
+    text-decoration: none;
+    background: linear-gradient(currentColor, currentColor) no-repeat 0 85% / 0 2px;
+    transition: background-size .25s var(--mola);
+  }
+
+  .topo__links a:hover { background-size: 100% 2px; }
+}
 
 /* ---------- hero ---------- */
 
-.hero {
-  padding-block: clamp(1rem, 3vw, 2rem) clamp(3rem, 7vw, 6rem);
-}
+.hero { padding-block: .5rem 3rem; }
 
 .hero__grade {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(1.5rem, 3vw, 3rem);
-  min-height: min(calc(100dvh - var(--topo-h) - 3rem), 820px);
+  gap: 1.5rem;
 }
 
 .hero__titulo {
@@ -329,7 +452,7 @@ button { font: inherit; color: inherit; }
 .hero__titulo span + span { margin-top: .08em; }
 
 .hero__deck {
-  margin-top: clamp(1.25rem, 2.5vw, 2rem);
+  margin-top: 1.25rem;
   font-size: var(--f-deck);
   line-height: 1.45;
   max-width: 31ch;
@@ -337,24 +460,47 @@ button { font: inherit; color: inherit; }
 }
 
 .hero__acoes {
-  margin-top: clamp(1.75rem, 3vw, 2.5rem);
+  margin-top: 1.75rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1rem 1.75rem;
+  gap: 1.1rem 1.75rem;
+}
+
+.hero__acoes .botao { width: 100%; }
+
+@media (min-width: 640px) {
+  .hero__acoes .botao { width: auto; }
+}
+
+@media (min-width: 1024px) {
+  .hero { padding-block: 1rem 6rem; }
+
+  .hero__grade {
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(1.5rem, 3vw, 3rem);
+    min-height: min(calc(100dvh - var(--topo-h) - 3rem), 820px);
+  }
+
+  .hero__deck { margin-top: 2rem; }
+  .hero__acoes { margin-top: 2.5rem; }
 }
 
 /* O palco repete o selo: o livro ocupa o lugar do cão, entre "Desde" e "2016". */
 .palco {
   position: relative;
   width: 100%;
-  max-width: 620px;
+  max-width: 460px;
   aspect-ratio: 1;
   justify-self: center;
   display: grid;
   place-items: center;
   isolation: isolate;
+  border-radius: 50%;
 }
+
+.palco:focus-visible { outline-offset: -4%; }
 
 .palco__anel {
   position: absolute;
@@ -418,60 +564,91 @@ button { font: inherit; color: inherit; }
 .palco.is-3d .palco__dica { opacity: .8; }
 .palco.is-girado .palco__dica { opacity: 0; transition-delay: 0s; }
 
-/* ---------- frases ---------- */
+@media (min-width: 1024px) {
+  .palco { max-width: 620px; }
+}
 
-.frases { padding-block: var(--secao-y); }
+/* ---------- frases (bloco anil) ---------- */
 
 .frases__grade {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  gap: clamp(2rem, 6vw, 6rem);
-  align-items: center;
+  gap: 2rem;
 }
+
+.frases__foto { max-width: 480px; }
 
 .frases__foto img {
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 1;
   object-fit: cover;
-  object-position: 50% 70%;
+  object-position: 50% 74%;
   border-radius: var(--raio-midia);
 }
 
+/* Balões de conversa: frases que tutores diferentes já disseram. */
 .frases__lista {
-  margin-top: clamp(1.75rem, 3vw, 2.5rem);
+  margin-top: 1.75rem;
   display: grid;
-  gap: .85rem;
+  gap: .6rem;
+  justify-items: start;
 }
 
-.frases__lista li {
+.balao {
+  max-width: 92%;
+  padding: .7rem 1.1rem .8rem;
+  background: var(--papel);
+  border-radius: var(--raio-cartao) var(--raio-cartao) var(--raio-cartao) 6px;
+  box-shadow: var(--sombra-azul);
   font: 800 var(--f-h3)/1.15 var(--display);
   text-wrap: balance;
 }
 
-/* vozes diferentes, como numa conversa */
-.frases__lista li:nth-child(even) { padding-left: clamp(1.25rem, 4vw, 3.5rem); }
+.balao { transform-origin: 0 100%; } /* o balão "chega" a partir do bico */
+
+.balao:nth-child(even) {
+  transform-origin: 100% 100%;
+  justify-self: end;
+  border-radius: var(--raio-cartao) var(--raio-cartao) 6px var(--raio-cartao);
+}
 
 .frases__virada {
-  margin-top: clamp(2rem, 4vw, 3rem);
+  margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 3px solid var(--tinta);
+  border-top: 3px solid var(--azul);
   font-size: var(--f-deck);
   line-height: 1.45;
   max-width: 34ch;
 }
 
-/* ---------- os 7 erros ---------- */
+@media (min-width: 768px) {
+  .frases__grade {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: center;
+  }
+
+  .frases__foto { max-width: none; }
+
+  .frases__foto img {
+    aspect-ratio: 4 / 5;
+    object-position: 50% 70%;
+  }
+
+  .frases__lista { margin-top: 2.5rem; }
+  .balao { max-width: 80%; }
+  .frases__virada { margin-top: 3rem; }
+}
+
+/* ---------- os 7 erros (bloco azul) ---------- */
 
 .erros__cabeca .titulo { max-width: 17ch; }
 .erros__cabeca .deck { color: var(--luz-suave); }
 
-/* lista e placar dividem o mesmo trecho: o placar só gruda enquanto a lista está na tela */
+/* Lista e placar dividem o mesmo trecho: o placar só gruda enquanto a lista está na tela. */
 .erros__jogo {
-  margin-top: clamp(2rem, 4vw, 3.5rem);
+  margin-top: 2rem;
   display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
-  gap: clamp(2rem, 5vw, 5rem);
-  align-items: start;
+  gap: 1rem;
 }
 
 .erros__lista {
@@ -479,15 +656,13 @@ button { font: inherit; color: inherit; }
   gap: .625rem;
 }
 
-.erros__fim { display: none; }
-
 .erro {
   width: 100%;
   display: grid;
-  grid-template-columns: 2.75rem minmax(0, 1fr) 2.25rem;
-  gap: 1rem;
+  grid-template-columns: 2.1rem minmax(0, 1fr) 2rem;
+  gap: .75rem;
   align-items: start;
-  padding: 1.1rem 1.1rem 1.15rem 1.25rem;
+  padding: 1rem .9rem 1.05rem 1rem;
   text-align: left;
   background: transparent;
   border: 2px solid var(--luz-linha);
@@ -498,9 +673,10 @@ button { font: inherit; color: inherit; }
 
 .erro:hover { border-color: rgba(255, 249, 240, .55); }
 .erro:active { transform: scale(.985); }
+.erro:focus-visible { outline-offset: 4px; }
 
 .erro__n {
-  font: 700 2.5rem/.9 var(--gotica);
+  font: 700 2.1rem/.9 var(--gotica);
   color: var(--laranja);
   transition: color .22s ease;
 }
@@ -513,15 +689,15 @@ button { font: inherit; color: inherit; }
 .erro__efeito {
   display: block;
   margin-top: .4rem;
-  font-size: 1rem;
+  font-size: .9375rem;
   line-height: 1.5;
   color: var(--luz-suave);
   transition: color .22s ease;
 }
 
 .erro__marca {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2rem;
+  height: 2rem;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -553,15 +729,22 @@ button { font: inherit; color: inherit; }
 
 .erro[aria-pressed="true"] .erro__marca .icone { transform: scale(1); }
 
-.erro:focus-visible { outline-offset: 4px; }
-
+/* Placar compacto, grudado embaixo enquanto a pessoa marca a lista. */
 .placar {
   position: sticky;
-  top: calc(var(--topo-h) + 1.5rem);
-  padding: clamp(1.5rem, 3vw, 2.25rem);
+  bottom: calc(.75rem + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  padding: .85rem 1.1rem;
   background: var(--azul-fundo);
-  border-radius: 28px;
+  border-radius: 22px;
+  box-shadow: 0 18px 40px -14px rgba(4, 12, 40, .85);
 }
+
+.placar__rotulo,
+.placar__acoes { display: none; }
 
 .placar__rotulo {
   font-weight: 500;
@@ -571,14 +754,14 @@ button { font: inherit; color: inherit; }
 .placar__conta {
   display: flex;
   align-items: baseline;
-  gap: .6rem;
-  margin-top: .25rem;
+  gap: .35rem;
 }
 
 .placar__n {
-  font: 700 clamp(5rem, 3.5rem + 5vw, 7.5rem)/.85 var(--gotica);
+  font: 700 3.25rem/.85 var(--gotica);
   color: var(--laranja);
-  min-width: .6em;
+  min-width: .5em;
+  font-variant-numeric: tabular-nums;
 }
 
 .placar__n.is-pulso { animation: pulso .35s var(--mola); }
@@ -587,19 +770,15 @@ button { font: inherit; color: inherit; }
   40% { transform: scale(1.14); }
 }
 
-.placar__de { font: 800 2rem/1 var(--display); }
+.placar__de { font: 800 1.25rem/1 var(--display); }
 
 .placar__msg {
-  margin-top: 1.25rem;
-  min-height: 4.65em;
-  font-size: 1.0625rem;
-  line-height: 1.55;
+  font-size: .875rem;
+  line-height: 1.4;
   text-wrap: pretty;
 }
 
 .placar__acoes {
-  margin-top: 1.5rem;
-  display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: .75rem 1.25rem;
@@ -620,26 +799,67 @@ button { font: inherit; color: inherit; }
 
 .placar__limpar:hover { color: var(--luz); }
 
-/* ---------- sumário ---------- */
+.erros__fim {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .erro {
+    grid-template-columns: 2.75rem minmax(0, 1fr) 2.25rem;
+    gap: 1rem;
+    padding: 1.1rem 1.1rem 1.15rem 1.25rem;
+  }
+
+  .erro__n { font-size: 2.5rem; }
+  .erro__marca { width: 2.25rem; height: 2.25rem; }
+  .erro__efeito { font-size: 1rem; }
+}
+
+/* No desktop o placar vai para o lado da lista e gruda em cima. */
+@media (min-width: 1024px) {
+  .erros__jogo {
+    margin-top: 3.5rem;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: start;
+  }
+
+  .placar {
+    top: calc(var(--topo-h) + 1.5rem);
+    bottom: auto;
+    display: block;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    border-radius: 28px;
+    box-shadow: none;
+  }
+
+  .placar__rotulo { display: block; }
+  .placar__conta { margin-top: .25rem; gap: .6rem; }
+  .placar__n { font-size: clamp(5rem, 3.5rem + 5vw, 7.5rem); min-width: .6em; }
+  .placar__de { font-size: 2rem; }
+  .placar__msg { margin-top: 1.25rem; min-height: 4.65em; font-size: 1.0625rem; line-height: 1.55; }
+  .placar__acoes { display: flex; margin-top: 1.5rem; }
+
+  .erros__fim { display: none; }
+}
+
+/* ---------- sumário (campo laranja) ---------- */
 
 .sumario { padding-block: var(--secao-y); }
 
 .sumario__grade {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  gap: clamp(2rem, 6vw, 6rem);
-  align-items: start;
-}
-
-.sumario__cabeca {
-  position: sticky;
-  top: calc(var(--topo-h) + 2rem);
+  gap: 2rem;
 }
 
 .folha {
   background: var(--papel);
   border-radius: var(--raio-papel);
-  padding: clamp(1.5rem, 4vw, 3.5rem);
+  padding: 1.5rem;
   box-shadow: 0 1px 0 rgba(110, 46, 0, .12), var(--sombra-quente);
 }
 
@@ -655,9 +875,10 @@ button { font: inherit; color: inherit; }
 }
 
 .folha__topo img { width: auto; height: 18px; }
+.folha__topo span { display: none; }
 
 .folha__titulo {
-  margin: clamp(1.5rem, 3vw, 2.25rem) 0 .5rem;
+  margin: 1.5rem 0 .5rem;
   font: 900 clamp(2rem, 1.6rem + 1.4vw, 2.75rem)/1 var(--display);
 }
 
@@ -682,7 +903,10 @@ button { font: inherit; color: inherit; }
   margin-top: .2rem;
 }
 
-.indice__nome { font: 800 var(--f-h3)/1.15 var(--display); }
+.indice__nome {
+  min-width: 0;
+  font: 800 var(--f-h3)/1.15 var(--display);
+}
 
 .indice__pontos {
   flex: 1 1 1.5rem;
@@ -705,13 +929,31 @@ button { font: inherit; color: inherit; }
   color: var(--tinta-suave);
 }
 
-/* ---------- mitos ---------- */
+@media (min-width: 640px) {
+  .folha { padding: clamp(1.5rem, 4vw, 3.5rem); }
+  .folha__topo span { display: inline; }
+  .folha__titulo { margin-top: clamp(1.5rem, 3vw, 2.25rem); }
+}
+
+@media (min-width: 768px) {
+  .sumario__grade {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: start;
+  }
+
+  .sumario__cabeca {
+    position: sticky;
+    top: calc(var(--topo-h) + 2rem);
+  }
+}
+
+/* ---------- mitos (bloco tinta) ---------- */
 
 .mitos__lista {
-  margin-top: clamp(2.5rem, 5vw, 4rem);
+  margin-top: 2.5rem;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(2.5rem, 5vw, 4rem) clamp(2rem, 6vw, 6rem);
+  gap: 2.5rem;
 }
 
 .mito__frase {
@@ -739,15 +981,19 @@ html:not(.js) .mito__frase s,
   color: var(--luz-suave);
 }
 
-/* ---------- quem somos ---------- */
+@media (min-width: 768px) {
+  .mitos__lista {
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(2.5rem, 5vw, 4rem) clamp(2rem, 6vw, 6rem);
+  }
+}
 
-.sobre { padding-block: var(--secao-y); }
+/* ---------- quem somos (bloco anil) ---------- */
 
 .sobre__grade {
   display: grid;
-  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
-  gap: clamp(2.5rem, 7vw, 7rem);
-  align-items: center;
+  gap: 2.5rem;
 }
 
 .sobre__desde {
@@ -788,58 +1034,129 @@ html:not(.js) .mito__frase s,
   top: .38em;
   width: .95rem;
   height: .95rem;
-  border: 3px solid var(--azul);
+  border: 3px solid var(--laranja);
   border-radius: 50%;
 }
 
 .sobre .link-forte { margin-top: 2rem; }
 
+.sobre__galeria { max-width: 520px; }
+
 .sobre__fotos {
+  position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
+/* o anel do selo, em laranja, segurando as duas fotos */
+.sobre__anel {
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: 108%;
+  aspect-ratio: 1;
+  border: clamp(14px, 2.4vw, 26px) solid var(--laranja);
+  border-radius: 50%;
+  transform: translate(-52%, -47%);
+}
+
+/* Cada foto é um botão: clicar, tocar ou apertar Enter troca as duas de
+   lugar. As posições são só duas classes (is-tras / is-frente); o main.js
+   troca as classes e anima a passagem de uma posição para a outra. */
 .sobre__foto {
+  position: relative;
+  display: block;
+  width: 100%;
+  grid-row: 1;
+  align-self: start; /* o botão acompanha a foto, sem esticar até a altura da linha */
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: var(--raio-midia);
+  cursor: pointer;
+  transform-origin: 0 0; /* a animação calcula posição e escala a partir do canto */
+  transition: translate .3s var(--mola), box-shadow .3s ease;
+}
+
+.sobre__foto img {
   width: 100%;
   aspect-ratio: 3 / 4;
   object-fit: cover;
-  border-radius: var(--raio-midia);
-  grid-row: 1;
+  border-radius: inherit;
 }
 
-.sobre__foto--a { grid-column: 1 / span 8; }
+.sobre__foto.is-tras {
+  grid-column: 1 / span 8;
+  z-index: 1;
+}
 
-.sobre__foto--b {
+/* a moldura da foto da frente é o próprio fundo do bloco, recortando a de trás */
+.sobre__foto.is-frente {
   grid-column: 6 / span 7;
   margin-top: 48%;
-  box-shadow: 0 0 0 10px var(--laranja);
+  z-index: 2;
+  box-shadow: 0 0 0 10px var(--anil);
 }
 
-/* ---------- para quem ---------- */
+.sobre__foto:focus-visible { outline-offset: 14px; }
 
-.para-quem { padding-block: 0 var(--secao-y); }
+/* no mouse, a foto de trás se oferece um pouco para o clique */
+@media (hover: hover) and (pointer: fine) {
+  .sobre__foto.is-tras:hover { translate: 0 -8px; }
+}
+
+.sobre__dica {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45em;
+  margin-top: 1.25rem;
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--tinta-suave);
+}
+
+@media (min-width: 768px) {
+  .sobre__grade {
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    gap: clamp(2.5rem, 7vw, 7rem);
+    align-items: center;
+  }
+
+  .sobre__galeria { max-width: none; }
+}
+
+/* ---------- para quem (campo laranja) ---------- */
+
+.para-quem { padding-block: var(--secao-y); }
 
 .pq__grade {
-  margin-top: clamp(2rem, 4vw, 3rem);
+  margin-top: 2rem;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(1.5rem, 4vw, 3rem);
+  gap: 1.5rem;
   align-items: start;
 }
 
-.pq__col--alerta {
-  padding: clamp(1.5rem, 3vw, 2.5rem);
-  border: 3px solid var(--tinta);
-  border-radius: 28px;
+.pq__col {
+  padding: 1.5rem;
+  border-radius: var(--raio-cartao);
 }
+
+/* "é para você": cartão anil; "procure ajuda": só o contorno */
+.pq__col--anil {
+  background: var(--anil);
+  box-shadow: var(--sombra-quente);
+}
+
+.pq__col--alerta { border: 3px solid var(--tinta); }
 
 .pq__sub {
   font: 800 var(--f-h3)/1.15 var(--display);
   margin-bottom: 1.25rem;
   text-wrap: balance;
 }
-
-.pq__col:not(.pq__col--alerta) { padding-top: clamp(1.5rem, 3vw, 2.5rem); }
 
 .pq__nota {
   margin-top: 1.5rem;
@@ -870,21 +1187,31 @@ html:not(.js) .mito__frase s,
 }
 
 .pq__col--alerta .lista-icone .icone { color: var(--tinta); }
-
 .lista-icone--clara .icone { color: var(--laranja); }
 
-/* ---------- oferta ---------- */
+@media (min-width: 768px) {
+  .pq__grade {
+    margin-top: clamp(2rem, 4vw, 3rem);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1.5rem, 4vw, 3rem);
+  }
+
+  .pq__col { padding: clamp(1.5rem, 3vw, 2.5rem); border-radius: 28px; }
+}
+
+/* ---------- oferta (bloco azul) ---------- */
 
 .oferta__grade {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-  gap: clamp(2rem, 6vw, 6rem);
-  align-items: center;
+  gap: 2rem;
 }
 
 .oferta__livro {
   position: relative;
+  width: 100%;
+  max-width: 420px;
   aspect-ratio: 1;
+  justify-self: center;
   display: grid;
   place-items: center;
   isolation: isolate;
@@ -935,6 +1262,7 @@ html:not(.js) .mito__frase s,
   font: 900 clamp(3.5rem, 2.6rem + 3.6vw, 5.5rem)/.9 var(--display);
   color: var(--laranja);
   letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums;
 }
 
 .preco__nota {
@@ -943,7 +1271,10 @@ html:not(.js) .mito__frase s,
   color: var(--luz-suave);
 }
 
-.oferta .botao--grande { margin-top: 1.75rem; }
+.oferta .botao--grande {
+  width: 100%;
+  margin-top: 1.75rem;
+}
 
 .garantia {
   margin-top: 1.5rem;
@@ -962,15 +1293,27 @@ html:not(.js) .mito__frase s,
   color: var(--laranja);
 }
 
-/* ---------- dúvidas ---------- */
+@media (min-width: 768px) {
+  .oferta__grade {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: center;
+  }
 
-.duvidas { padding-block: var(--secao-y); }
-
-.duvidas__lista {
-  max-width: 880px;
-  margin-top: clamp(2rem, 4vw, 3rem);
-  border-top: 3px solid var(--tinta);
+  .oferta__livro { max-width: none; }
+  .oferta .botao--grande { width: auto; }
 }
+
+/* ---------- dúvidas (bloco anil) ---------- */
+
+.duvidas__grade {
+  margin-top: 2rem;
+  display: grid;
+  gap: 2rem;
+  align-items: start;
+}
+
+.duvidas__lista { border-top: 3px solid var(--tinta); }
 
 .pergunta { border-bottom: 1px solid var(--linha); }
 
@@ -979,7 +1322,7 @@ html:not(.js) .mito__frase s,
   justify-content: space-between;
   align-items: center;
   gap: 1.5rem;
-  padding-block: 1.4rem;
+  padding-block: 1.3rem;
   font: 800 var(--f-h3)/1.2 var(--display);
   cursor: pointer;
   list-style: none;
@@ -990,12 +1333,17 @@ html:not(.js) .mito__frase s,
 .pergunta summary .icone {
   width: 1.5rem;
   height: 1.5rem;
+  color: var(--azul);
   transition: transform .3s var(--mola);
 }
 
 .pergunta[open] summary .icone { transform: rotate(180deg); }
 
-.pergunta summary:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .18em; }
+.pergunta summary:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: .18em;
+}
 
 .pergunta__resp {
   padding-bottom: 1.6rem;
@@ -1017,20 +1365,59 @@ html:not(.js) .mito__frase s,
   :root { interpolate-size: allow-keywords; }
 }
 
-/* ---------- rodapé ---------- */
+/* "Sua dúvida não está aqui?": o próximo passo depois da lista */
+.duvidas__contato {
+  padding: 1.5rem;
+  background: var(--azul);
+  color: var(--luz);
+  border-radius: var(--raio-cartao);
+  box-shadow: 0 26px 50px -30px rgba(15, 35, 90, .9);
+}
+
+.duvidas__contato-titulo {
+  font: 800 var(--f-h3)/1.15 var(--display);
+  text-wrap: balance;
+}
+
+.duvidas__contato p {
+  margin-top: .75rem;
+  max-width: 40ch;
+  color: var(--luz-suave);
+}
+
+.duvidas__contato .botao { margin-top: 1.5rem; }
+
+@media (min-width: 768px) {
+  .duvidas__grade { margin-top: clamp(2rem, 4vw, 3rem); }
+  .pergunta summary { padding-block: 1.4rem; }
+}
+
+@media (min-width: 1024px) {
+  .duvidas__grade {
+    grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+    gap: clamp(2rem, 5vw, 5rem);
+  }
+
+  .duvidas__contato {
+    position: sticky;
+    top: calc(var(--topo-h) + 1.5rem);
+    padding: 2rem;
+    border-radius: 28px;
+  }
+}
+
+/* ---------- rodapé (tinta) ---------- */
 
 .rodape {
   margin-inline: var(--inset);
   border-radius: var(--raio-bloco) var(--raio-bloco) 0 0;
   background: var(--tinta);
   color: var(--luz);
-  padding-block: clamp(4rem, 8vw, 7rem) 2rem;
+  padding-block: 4rem 6.5rem; /* folga embaixo para a barra de compra */
 }
 
 .rodape__grade {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
   gap: 3rem;
 }
 
@@ -1045,19 +1432,19 @@ html:not(.js) .mito__frase s,
 
 /* O selo redondo da marca: disco laranja, anel azul, cão em tinta. */
 .selo {
-  width: clamp(170px, 19vw, 250px);
+  width: 150px;
   aspect-ratio: 1;
   display: grid;
   place-items: center;
   background: var(--laranja);
-  border: clamp(12px, 1.4vw, 18px) solid var(--azul);
+  border: 12px solid var(--azul);
   border-radius: 50%;
 }
 
 .selo img { width: 68%; margin-top: 4%; }
 
 .rodape__base {
-  margin-top: clamp(3rem, 6vw, 5rem);
+  margin-top: 3rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--luz-linha);
   display: flex;
@@ -1076,147 +1463,109 @@ html:not(.js) .mito__frase s,
 
 .rodape__base a:hover { text-decoration: underline; text-underline-offset: .2em; }
 
-/* ---------- barra de compra (celular) ---------- */
+@media (min-width: 768px) {
+  .rodape { padding-block: clamp(4rem, 8vw, 7rem) 2rem; }
 
-.barra-compra { display: none; }
-
-/* ---------- responsivo ---------- */
-
-@media (max-width: 1080px) {
-  .erros__jogo {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
+  .rodape__grade {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
   }
 
-  /* Placar compacto, grudado embaixo enquanto a pessoa marca a lista. */
-  .placar {
-    top: auto;
-    bottom: calc(.75rem + env(safe-area-inset-bottom));
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    gap: 1rem;
-    padding: .85rem 1.1rem;
-    border-radius: 22px;
-    box-shadow: 0 18px 40px -14px rgba(4, 12, 40, .85);
+  .selo {
+    width: clamp(170px, 19vw, 250px);
+    border-width: clamp(12px, 1.4vw, 18px);
   }
 
-  .placar__rotulo,
-  .placar__acoes { display: none; }
+  .rodape__base { margin-top: clamp(3rem, 6vw, 5rem); }
+}
 
-  .placar__conta { margin: 0; gap: .35rem; }
-  .placar__n { font-size: 3.25rem; min-width: .5em; }
-  .placar__de { font-size: 1.25rem; }
-  .placar__msg { margin: 0; min-height: 0; font-size: .875rem; line-height: 1.4; }
+/* ---------- barra de compra (só no celular) ---------- */
 
-  .erros__fim {
-    margin-top: 1.5rem;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem 1.5rem;
+.barra-compra {
+  position: fixed;
+  left: .5rem;
+  right: .5rem;
+  bottom: calc(.5rem + env(safe-area-inset-bottom));
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .5rem .5rem .5rem .6rem;
+  background: var(--tinta);
+  color: var(--luz);
+  border-radius: 22px;
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, .55);
+  transform: translateY(calc(100% + 1.5rem));
+  visibility: hidden;
+  transition: transform .4s var(--mola), visibility 0s linear .4s;
+}
+
+.barra-compra.is-visivel {
+  transform: none;
+  visibility: visible;
+  transition: transform .4s var(--mola), visibility 0s;
+}
+
+.barra-compra img {
+  width: 36px;
+  border-radius: 2px 3px 3px 2px;
+}
+
+.barra-compra__txt {
+  display: grid;
+  line-height: 1.2;
+  font-size: .875rem;
+  color: var(--luz-suave);
+}
+
+.barra-compra__txt strong {
+  font: 800 1.125rem/1.1 var(--display);
+  color: var(--luz);
+}
+
+.barra-compra .botao {
+  margin-left: auto;
+  min-height: 48px;
+  padding: 0 1.25em;
+  font-size: 1rem;
+}
+
+@media (min-width: 768px) {
+  .barra-compra { display: none; }
+}
+
+/* ---------- preferências do sistema ---------- */
+
+/* ---------- entradas no scroll ----------
+   Só onde a entrada conta alguma coisa: os balões chegam como mensagens,
+   a lista dos erros e o sumário aparecem item a item, as fotos e os
+   cartões assentam. O main.js marca .is-visivel quando o grupo aparece e
+   dá a cada item a variável --ordem (posição dentro do grupo). */
+
+@media (prefers-reduced-motion: no-preference) {
+  html.js [data-revelar]:not(.is-visivel) { opacity: 0; }
+
+  html.js [data-revelar].is-visivel {
+    animation: entrar .8s cubic-bezier(.16, 1, .3, 1) calc(var(--ordem, 0) * 80ms) both;
+  }
+
+  html.js .balao[data-revelar].is-visivel {
+    animation-name: chegar;
+    animation-duration: .5s;
+    animation-delay: calc(var(--ordem, 0) * 240ms + 120ms);
   }
 }
 
-@media (max-width: 860px) {
-  :root { --topo-h: 64px; }
-
-  .topo__links { display: none; }
-  .topo__barra { justify-content: space-between; }
-  .topo__marca img { height: 22px; }
-
-  .hero__grade {
-    grid-template-columns: minmax(0, 1fr);
-    min-height: 0;
-    gap: 1.5rem;
-  }
-
-  .palco { max-width: 460px; }
-
-  .frases__grade,
-  .sumario__grade,
-  .sobre__grade,
-  .oferta__grade,
-  .pq__grade,
-  .mitos__lista {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .frases__foto { max-width: 480px; }
-  .frases__foto img { aspect-ratio: 1; object-position: 50% 74%; }
-  .sumario__cabeca { position: static; }
-
-  .sobre__fotos { max-width: 520px; }
-
-  .oferta__livro { max-width: 420px; width: 100%; justify-self: center; }
-  .oferta .botao--grande { width: 100%; }
-
-  .rodape__grade { grid-template-columns: minmax(0, 1fr); }
-  .selo { width: 150px; }
-  .rodape { padding-bottom: 6.5rem; }
-
-  .barra-compra {
-    position: fixed;
-    left: .5rem;
-    right: .5rem;
-    bottom: calc(.5rem + env(safe-area-inset-bottom));
-    z-index: 30;
-    display: flex;
-    align-items: center;
-    gap: .75rem;
-    padding: .5rem .5rem .5rem .6rem;
-    background: var(--tinta);
-    color: var(--luz);
-    border-radius: 22px;
-    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, .55);
-    transform: translateY(calc(100% + 1.5rem));
-    visibility: hidden;
-    transition: transform .4s var(--mola), visibility 0s linear .4s;
-  }
-
-  .barra-compra.is-visivel {
-    transform: none;
-    visibility: visible;
-    transition: transform .4s var(--mola), visibility 0s;
-  }
-
-  .barra-compra img {
-    width: 36px;
-    border-radius: 2px 3px 3px 2px;
-  }
-
-  .barra-compra__txt {
-    display: grid;
-    line-height: 1.2;
-    font-size: .875rem;
-    color: var(--luz-suave);
-  }
-
-  .barra-compra__txt strong {
-    font: 800 1.125rem/1.1 var(--display);
-    color: var(--luz);
-  }
-
-  .barra-compra .botao {
-    margin-left: auto;
-    min-height: 48px;
-    padding: 0 1.25em;
-    font-size: 1rem;
-  }
+/* só transform e opacity: animar desfoque em fotos grandes pesa no celular */
+@keyframes entrar {
+  from { opacity: 0; transform: translateY(28px) scale(.98); }
+  to   { opacity: 1; transform: none; }
 }
 
-@media (max-width: 520px) {
-  .hero__acoes .botao { width: 100%; }
-  .hero__acoes { gap: 1.1rem; }
-  .erro { grid-template-columns: 2.1rem minmax(0, 1fr) 2rem; gap: .75rem; padding: 1rem .9rem 1.05rem 1rem; }
-  .erro__n { font-size: 2.1rem; }
-  .erro__marca { width: 2rem; height: 2rem; }
-  .erro__efeito { font-size: .9375rem; }
-  .folha__topo span { display: none; }
-  .indice__linha { flex-wrap: nowrap; }
+@keyframes chegar {
+  from { opacity: 0; transform: translateY(12px) scale(.9); }
+  to   { opacity: 1; transform: none; }
 }
-
-/* ---------- movimento reduzido ---------- */
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

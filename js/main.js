@@ -11,7 +11,7 @@
    Instagram da T Dogs.
    --------------------------------------------------------- */
 const CONFIG = {
-  preco: 'R$ 27',
+  preco: 27, // em reais: 27 aparece como "R$ 27"; 27.9 aparece como "R$ 27,90"
   checkout: 'https://ig.me/m/tdogsadestramento',
 };
 
@@ -29,9 +29,45 @@ const observar = (callback, opcoes) => {
   return obs;
 };
 
+/* ---------- entradas no scroll ----------
+   Itens com data-revelar entram juntos quando o grupo deles (o elemento
+   pai) aparece na tela, cada um com um pequeno atraso pela posição
+   (--ordem). Sem IntersectionObserver ou com movimento reduzido, tudo já
+   aparece no lugar. */
+
+const revelaveis = [...document.querySelectorAll('[data-revelar]')];
+const grupos = new Map();
+
+revelaveis.forEach((el) => {
+  const pai = el.parentElement;
+  if (!grupos.has(pai)) grupos.set(pai, []);
+  const grupo = grupos.get(pai);
+  el.style.setProperty('--ordem', String(grupo.length));
+  grupo.push(el);
+});
+
+if (calmo || !('IntersectionObserver' in window)) {
+  revelaveis.forEach((el) => el.classList.add('is-visivel'));
+} else {
+  const obsRevelar = observar((entradas) => {
+    entradas.forEach((e) => {
+      if (!e.isIntersecting) return;
+      grupos.get(e.target).forEach((el) => el.classList.add('is-visivel'));
+      obsRevelar.unobserve(e.target);
+    });
+  }, { rootMargin: '0px 0px -12% 0px' });
+  grupos.forEach((_, pai) => obsRevelar.observe(pai));
+}
+
 /* ---------- preço, links de compra e ano ---------- */
 
-document.querySelectorAll('[data-preco]').forEach((el) => { el.textContent = CONFIG.preco; });
+const precoFormatado = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  minimumFractionDigits: Number.isInteger(CONFIG.preco) ? 0 : 2,
+}).format(CONFIG.preco);
+
+document.querySelectorAll('[data-preco]').forEach((el) => { el.textContent = precoFormatado; });
 
 document.querySelectorAll('[data-comprar]').forEach((a) => {
   a.href = CONFIG.checkout;
@@ -40,7 +76,11 @@ document.querySelectorAll('[data-comprar]').forEach((a) => {
 
 document.querySelectorAll('[data-ano]').forEach((el) => { el.textContent = String(new Date().getFullYear()); });
 
-/* ---------- topo: ganha fundo quando a página rola ---------- */
+/* ---------- topo ----------
+   O topo é transparente. Três estados, por IntersectionObserver:
+   is-rolado   a página saiu do início: liga o desfoque atrás do topo
+   is-escuro   um bloco azul ou preto está passando por baixo do topo
+   is-compacto o hero saiu da tela (no celular, o botão dá lugar à barra) */
 
 const topo = document.querySelector('[data-topo]');
 const sentinela = document.createElement('div');
@@ -51,6 +91,31 @@ document.body.prepend(sentinela);
 observar(([e]) => {
   topo.classList.toggle('is-rolado', !e.isIntersecting);
 }).observe(sentinela);
+
+// Uma linha de 1px na altura do meio do topo: o bloco escuro que cruza
+// essa linha é o que está embaixo da logo e do botão.
+const escuros = [...document.querySelectorAll('[data-tema="escuro"]')];
+let obsTema = null;
+
+function vigiarTema() {
+  if (obsTema) obsTema.disconnect();
+  const meio = Math.round(topo.getBoundingClientRect().height / 2);
+  const abaixo = Math.max(0, window.innerHeight - meio - 1);
+  const embaixo = new Set();
+  obsTema = new IntersectionObserver((entradas) => {
+    entradas.forEach((e) => (e.isIntersecting ? embaixo.add(e.target) : embaixo.delete(e.target)));
+    topo.classList.toggle('is-escuro', embaixo.size > 0);
+  }, { rootMargin: `-${meio}px 0px -${abaixo}px 0px` });
+  escuros.forEach((el) => obsTema.observe(el));
+}
+
+vigiarTema();
+
+let esperaTema = 0;
+window.addEventListener('resize', () => {
+  clearTimeout(esperaTema);
+  esperaTema = setTimeout(vigiarTema, 150);
+});
 
 /* ---------- os 7 erros ---------- */
 
@@ -112,9 +177,65 @@ if (mitos) {
   }, { threshold: 0.3 }).observe(mitos);
 }
 
+/* ---------- fotos de "quem somos": clicar troca a da frente ----------
+   As duas fotos são botões. O clique troca as classes is-frente/is-tras e
+   a passagem é animada com FLIP: mede onde cada foto estava, troca, mede
+   onde ficou e anima só o transform entre os dois pontos. A que vem para
+   a frente sobe num arco; a que vai para trás encolhe e gira de leve,
+   como uma carta voltando para o fundo do baralho. Um clique no meio da
+   animação parte da posição atual, sem pulo. */
+
+const galeria = document.querySelector('[data-fotos]');
+
+if (galeria) {
+  const fotos = [...galeria.querySelectorAll('[data-foto]')];
+  const emAndamento = new Map();
+  const dicaFotos = document.querySelector('[data-dica-fotos]');
+  if (dicaFotos && matchMedia('(pointer: coarse)').matches) dicaFotos.textContent = 'Toque nas fotos para trocar';
+
+  const trocarFotos = () => {
+    const antes = new Map(fotos.map((f) => [f, f.getBoundingClientRect()]));
+    emAndamento.forEach((animacao) => animacao.cancel());
+    emAndamento.clear();
+
+    fotos.forEach((f) => {
+      f.classList.toggle('is-frente');
+      f.classList.toggle('is-tras');
+    });
+
+    if (calmo || !fotos[0].animate) return;
+
+    fotos.forEach((f) => {
+      const de = antes.get(f);
+      const para = f.getBoundingClientRect();
+      const dx = de.left - para.left;
+      const dy = de.top - para.top;
+      const escala = de.width / para.width;
+      const meio = (escala + 1) / 2;
+      const vemPraFrente = f.classList.contains('is-frente');
+
+      const arco = vemPraFrente
+        ? `translate(${dx * 0.5}px, ${dy * 0.5 - para.height * 0.1}px) scale(${meio * 1.04}) rotate(-4deg)`
+        : `translate(${dx * 0.5}px, ${dy * 0.5 + para.height * 0.04}px) scale(${meio * 0.92}) rotate(3deg)`;
+
+      const animacao = f.animate([
+        { transform: `translate(${dx}px, ${dy}px) scale(${escala})` },
+        { transform: arco, offset: 0.5 },
+        { transform: 'none' },
+      ], { duration: 680, easing: 'cubic-bezier(.2, .8, .2, 1)' });
+
+      emAndamento.set(f, animacao);
+      animacao.onfinish = () => emAndamento.delete(f);
+    });
+  };
+
+  fotos.forEach((f) => f.addEventListener('click', trocarFotos));
+}
+
 /* ---------- barra de compra no celular ----------
    Aparece quando o botão do hero sai da tela e some onde já existe
-   um botão de compra à vista (placar dos erros, oferta, rodapé). */
+   um botão de compra à vista (placar dos erros, oferta, rodapé).
+   No mesmo momento o topo fica compacto e tira o próprio botão. */
 
 const barra = document.querySelector('[data-barra]');
 
@@ -134,6 +255,7 @@ if (barra) {
 
   observar(([e]) => {
     heroNaTela = e.isIntersecting;
+    topo.classList.toggle('is-compacto', !heroNaTela);
     decidir();
   }, { rootMargin: '0px 0px -35% 0px' }).observe(hero);
 

@@ -252,6 +252,19 @@ export async function montarLivro(palco, { calmo = false } = {}) {
   canvas.addEventListener('pointerup', soltar);
   canvas.addEventListener('pointercancel', soltar);
 
+  // Teclado: as setas giram o livro, como o arraste.
+  palco.tabIndex = 0;
+  palco.setAttribute('role', 'group');
+  palco.setAttribute('aria-roledescription', 'livro 3D');
+  palco.setAttribute('aria-label', `${palco.getAttribute('aria-label')} Use as setas do teclado para girar o livro.`);
+  palco.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    estado.velocidade += e.key === 'ArrowRight' ? 0.09 : -0.09;
+    palco.classList.add('is-girado');
+    pedirQuadro();
+  });
+
   // ---------- laço de desenho ----------
   const relogio = new THREE.Clock();
   const duracaoEntrada = calmo ? 0 : 1700;
@@ -283,10 +296,21 @@ export async function montarLivro(palco, { calmo = false } = {}) {
     estado.inclY = aproximar(estado.inclY, estado.alvoY, 6, dt);
 
     const flutua = calmo ? 0 : Math.sin(t * 1.15) * 0.07;
-    suporte.position.y = flutua - (1 - e) * 0.9;
+
+    // Saída do hero: quando o palco sobe para fora da tela, o livro vira um
+    // pouco e mostra mais a lombada, como se acompanhasse o scroll.
+    // (Só lê a posição do palco; o laço já roda a cada quadro.)
+    let saida = 0;
+    if (!calmo) {
+      const caixa = palco.getBoundingClientRect();
+      saida = Math.min(1, Math.max(0, -caixa.top / caixa.height));
+      saida = saida * saida * (3 - 2 * saida); // suaviza começo e fim
+    }
+
+    suporte.position.y = flutua - (1 - e) * 0.9 + saida * 0.45;
     suporte.rotation.set(
-      REPOUSO.x + estado.inclX,
-      REPOUSO.y + estado.inclY + estado.giro - (1 - e) * 2.7,
+      REPOUSO.x + estado.inclX + saida * 0.18,
+      REPOUSO.y + estado.inclY + estado.giro - (1 - e) * 2.7 + saida * 0.6,
       REPOUSO.z + (calmo ? 0 : Math.sin(t * 0.7) * 0.012),
     );
     suporte.scale.setScalar(0.9 + e * 0.1);
