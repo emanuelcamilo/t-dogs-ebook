@@ -6,13 +6,13 @@
 
 /* ---------------------------------------------------------
    CONFIGURAÇÃO: é aqui que se troca preço e link de compra.
-   checkout: link do Hotmart, Kiwify, Eduzz, Mercado Pago etc.
-   Enquanto não houver checkout, os botões abrem o Direct do
-   Instagram da T Dogs.
+   checkout: link de pagamento do eBook (hoje, a Kiwify). Ele vai
+   em todos os botões "Quero o eBook"; os links de contato
+   continuam abrindo o Direct do Instagram.
    --------------------------------------------------------- */
 const CONFIG = {
   preco: 27, // em reais: 27 aparece como "R$ 27"; 27.9 aparece como "R$ 27,90"
-  checkout: 'https://ig.me/m/tdogsadestramento',
+  checkout: 'https://pay.kiwify.com.br/kYlvP8b', // checkout da Kiwify
 };
 
 const raiz = document.documentElement;
